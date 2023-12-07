@@ -2,7 +2,7 @@ import Parser
 import Control.Applicative (Alternative(many))
 
 main = do
-  ls <- getLines
+  ls <- lines <$> readFile "input.txt"
   print $ sum . map (powers . rounds . parse) $ ls
 
 powers :: [(Int, String)] -> Int
@@ -18,6 +18,6 @@ data Game = Game {
 } deriving Show
 
 parse input = Game getId getRounds where
-  Just (getId, rest) = runP (stringP "Game " *> intP <* stringP ": ") input
-  getRounds = getP (many round) rest
-  round = (,) <$> (intP <* spacesP) <*> (anyWord colors <* spacesP <* anyOf ";," <* spacesP) 
+  Just (getId, rest) = run (string "Game " *> int <* string ": ") input
+  getRounds = unwrap (many round) rest
+  round = (,) <$> (int <* spaces) <*> (anyWord colors <* spaces <* anyChar ";," <* spaces) 
