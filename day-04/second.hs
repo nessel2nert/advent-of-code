@@ -22,13 +22,13 @@ play xs = case xs of
 
 parse :: String -> ([Int], [Int])
 parse =
-  getP $
+  unwrap $
     (,)
-      <$> ( spanP (/= ':')
-              *> charP ':'      -- ignore prefix
+      <$> ( parseWhile (/= ':')
+              *> char ':'      -- ignore prefix
               *> ints         -- card numbers
-              <* spaced (charP '|')
+              <* spaced (char '|')
           )
       <*> ints                -- winning numbers
   where
-    ints = many (spaced intP)
+    ints = many (spaced int)

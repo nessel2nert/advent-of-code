@@ -3,7 +3,7 @@ import Control.Applicative (Alternative(many, some))
 import Data.Maybe (isJust)
 
 main = do
-  ls <- getLines
+  ls <- lines <$> readFile "input.txt"
   print $ sum $ ids $ map parse ls
 
 ids = map gameId . filter belowLimit where
@@ -21,6 +21,6 @@ data Game = Game {
 } deriving Show
 
 parse input = Game getId getRounds where
-  Just (getId, rest) = runP (stringP "Game " *> intP <* stringP ": ") input
-  getRounds = getP (many round) rest
-  round = (,) <$> (intP <* spacesP) <*> (anyWord colors <* spacesP <* anyOf ";," <* spacesP) 
+  Just (getId, rest) = run (string "Game " *> int <* string ": ") input
+  getRounds = unwrap (many round) rest
+  round = (,) <$> (int <* spaces) <*> (anyWord colors <* spaces <* anyChar ";," <* spaces) 
