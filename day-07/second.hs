@@ -1,6 +1,6 @@
 import Parser
 import Control.Applicative (Alternative(many))
-import Data.List (sort, group, sortBy)
+import Data.List (sort, group, sortBy, partition)
 import Data.Ord (comparing, Down (Down))
 
 main = do
@@ -38,23 +38,20 @@ toCard c = Card $ case c of
     'J' -> 1
     _   -> error "Couldn't match card"
 
+rank :: Hand -> Int
 rank hand =
-    let pattern = sort . map length . group . sort . map value . cards
-        jokerCount = head $ pattern hand
-    in case tail (pattern hand) of
+    let (jokers, rest) = partition ((==1). value) $ cards hand
+        grouped = sortBy (comparing Down) . map length . group . sort $ rest
+    in case grouped of
         []   -> 7
-        [x]  -> 7
-        x:xs -> rank' $ x + jokerCount : xs
-
-rank' amounts = case amounts of 
-    [5]       -> 7 -- Five of a kind
-    [4,1]     -> 6 -- Four of a kind
-    [3,2]     -> 5 -- Fullhouse
-    [3,1,1]   -> 4 -- Three of a kind
-    [2,2,1]   -> 3 -- Two pair
-    [2,1,1,1] -> 2 -- Pair
-    _         -> 1 -- High card
-
+        x:xs -> case (x + length jokers) : xs of
+            [5]       -> 7 -- Five of a kind
+            [4,1]     -> 6 -- Four of a kind
+            [3,2]     -> 5 -- Fullhouse
+            [3,1,1]   -> 4 -- Three of a kind
+            [2,2,1]   -> 3 -- Two pair
+            [2,1,1,1] -> 2 -- Pair
+            _         -> 1 -- High card
 
 parse = unwrap $ Hand
     <$> many (toCard <$> anyChar "AKQJT98765432")
