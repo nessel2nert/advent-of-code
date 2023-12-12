@@ -1,6 +1,6 @@
 import Control.Monad (guard)
 
-newtype Galaxy = Galaxy (Integer, Integer) deriving Show
+newtype Galaxy = Galaxy (Integer, Integer) deriving Eq
 
 emptyCols = foldr mark (repeat False) where
   mark l m = zipWith (||) m $ map (=='#') l
@@ -16,10 +16,11 @@ galaxize ls = do
   
 distances :: [Galaxy] -> Integer
 distances gs = sum $ do
-  Galaxy (x0, y0) <- gs
-  Galaxy (x1, y1) <- gs
-  guard $ x0 /= x1 || y0 /= y1
-  return $ abs (x1-x0) + abs (y1-y0)
+  g0 <- gs
+  g1 <- gs
+  guard $ g0 /= g1
+  return $ dist g0 g1 where
+    dist (Galaxy (x0, y0)) (Galaxy (x1, y1)) = abs (x1-x0) + abs (y1-y0)
  
 mask ls = scanl (\x empty -> if not empty then x + 1 else x + 2) 0 $ emptyCols ls
 
