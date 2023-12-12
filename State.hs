@@ -31,3 +31,7 @@ modify :: (t -> t) -> State t ()
 modify f = do
     s <- get
     put $ f s
+
+with :: (t -> a) -> State t a
+with f = do
+    f <$> get

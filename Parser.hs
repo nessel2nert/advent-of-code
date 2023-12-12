@@ -14,13 +14,13 @@ module Parser (
 
 import Data.Char
 import Control.Applicative
-import Data.Maybe (fromJust)
+import Data.Maybe (fromMaybe)
 import Control.Monad (guard, void)
 
 newtype Parser a = Parser { run :: String -> Maybe (a, String) }
 
 -- Returns the parsed result throwing an exception if the parser failed
-unwrap p = fst . fromJust . run p
+unwrap p = fst . fromMaybe (error "Unwrapped failed parser") . run p
 
 -- Parses a single char
 char :: Char -> Parser Char
