@@ -9,7 +9,7 @@ module Parser (
     int,
     anyChar,
     anyWord,
-    spaced
+    spaced,
 ) where
 
 import Data.Char
