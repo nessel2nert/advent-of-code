@@ -67,13 +67,27 @@ spaced p = spaces *> p <* spaces
 sepBy :: Parser String -> Parser a -> Parser [a]
 sepBy sep p = ((:) <$> p <*> many (sep *> p)) <|> pure []
 
--- Parse a signed Int
-int :: Parser Int
-int = signP <*> (read <$> nonNull (parseWhile isDigit)) where
-    signP =
-        negate <$ char '-'
-        <|> id <$ char '+'
-        <|> pure id
+-- Transform the given parser that parses a fallback value if it fails
+parseOrElse :: a -> Parser a -> Parser a
+parseOrElse fallback p = p <|> pure fallback
+
+-- Parse a signed Integer given in octal, 
+int :: Parser Integer
+int = do
+    sign <- signP where
+        signP = optional id $
+            negate <$ char '-'
+            <|> id <$ char '+'
+    base <- parseOrElse 10 (toBase <$> anyWord ["0x", "0b", "0o", "0d"]) where
+        toBase b = case toLower b of
+            "0x" -> 16
+            "0b" -> 2
+            "0o" -> 8
+            "0d" -> 10
+    let validDigits = take base "0123456789ABCDEF"
+    digits <- map toNumber <$> nonNull (many anyChar validDigits) where
+        toNumber c = fromJust . elemIndex c base
+    return $ sign $ foldr (\acc x -> base * acc + x) 0 digits
 
 instance Functor Parser where
     fmap f (Parser p) = Parser p' where
