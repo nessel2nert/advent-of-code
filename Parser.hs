@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Parser (
     Parser(Parser),
     run,
@@ -16,6 +18,7 @@ import Data.Char
 import Control.Applicative
 import Data.Maybe (fromMaybe)
 import Control.Monad (guard, void)
+import Data.List
 
 newtype Parser a = Parser { run :: String -> Maybe (a, String) }
 
@@ -71,23 +74,23 @@ sepBy sep p = ((:) <$> p <*> many (sep *> p)) <|> pure []
 parseOrElse :: a -> Parser a -> Parser a
 parseOrElse fallback p = p <|> pure fallback
 
--- Parse a signed Integer given in octal, 
-int :: Parser Integer
+
+-- -- Parse a signed Integer given in octal, binary, hexadecimal and decimal
+int :: Parser Int
 int = do
-    sign <- signP where
-        signP = optional id $
-            negate <$ char '-'
-            <|> id <$ char '+'
-    base <- parseOrElse 10 (toBase <$> anyWord ["0x", "0b", "0o", "0d"]) where
-        toBase b = case toLower b of
-            "0x" -> 16
-            "0b" -> 2
-            "0o" -> 8
-            "0d" -> 10
-    let validDigits = take base "0123456789ABCDEF"
-    digits <- map toNumber <$> nonNull (many anyChar validDigits) where
-        toNumber c = fromJust . elemIndex c base
-    return $ sign $ foldr (\acc x -> base * acc + x) 0 digits
+    sign <- parseOrElse id $ negate <$ char '-' <|> id <$ char '+'
+    base <- parseOrElse 10 (toBase <$> anyWord ["0x", "0b", "0o", "0d"])
+    let digitList = take base $ zip "0123456789ABCDEF" [0..]
+        fromValidDigit base c = snd $ head $ dropWhile ((/=c) . fst) $ take base digitList
+    digits <- map (fromValidDigit base) <$> nonNull (many $ anyChar (map fst digitList))
+    return $ sign $ foldl (\acc x -> base * acc + x) 0 digits
+    where
+    toBase :: String -> Int 
+    toBase = \case
+        "0x" -> 16
+        "0b" -> 2
+        "0o" -> 8
+        "0d" -> 10
 
 instance Functor Parser where
     fmap f (Parser p) = Parser p' where
